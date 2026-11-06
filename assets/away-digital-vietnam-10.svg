@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="136" viewBox="0 0 600 136" role="img" aria-labelledby="title description">
+  <title id="title">Away Digital — 10 Years in Vietnam</title>
+  <desc id="description">Away Digital logo with a ten years in Vietnam anniversary mark.</desc>
+  <rect width="600" height="136" fill="#fff"/>
+  <g fill="#111" font-family="Arial, Helvetica, sans-serif" font-weight="900">
+    <text x="4" y="78" font-size="83" letter-spacing="-7">AWAY</text>
+    <text x="210" y="126" font-size="31" letter-spacing="1">DIGITAL</text>
+    <rect x="390" y="8" width="3" height="120"/>
+    <text x="416" y="111" font-size="112" letter-spacing="-10">10</text>
+  </g>
+  <text x="462" y="66" fill="#111" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">YEARS IN</text>
+  <text x="462" y="88" fill="#111" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">VIETNAM</text>
+</svg>
