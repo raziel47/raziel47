@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create and copy an Away Digital Teams email signature.">
+  <title>Away Digital Teams — Email Signature Generator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: #f0f0f0;
+      color: #111;
+      font-family: Arial, sans-serif;
+    }
+    .app { max-width: 760px; margin: 0 auto; }
+    h1 { margin: 0 0 4px; font-size: 19px; }
+    .subtitle { margin: 0 0 24px; color: #555; font-size: 13px; }
+    .form-card, .sig-wrapper {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .form-card { margin-bottom: 28px; padding: 24px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label, .mobile-toggle label, .preview-label {
+      color: #555;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .field input {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      color: #111;
+      font: 13px Arial, sans-serif;
+    }
+    .field input:focus { outline: 2px solid #555; outline-offset: 1px; }
+    .mobile-toggle { display: flex; align-items: center; gap: 8px; min-height: 18px; }
+    .mobile-toggle input { width: 15px; height: 15px; margin: 0; accent-color: #111; }
+    .mobile-toggle label { cursor: pointer; }
+    .preview-label { margin-bottom: 10px; color: #777; letter-spacing: .07em; }
+    .sig-wrapper { display: block; max-width: 100%; overflow-x: auto; margin-bottom: 18px; padding: 24px; }
+    .btn-copy {
+      padding: 11px 22px;
+      border: 0;
+      border-radius: 4px;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      font: 700 13px Arial, sans-serif;
+    }
+    .btn-copy:hover { background: #333; }
+    .btn-copy.copied { background: #2e7d32; }
+    .status { min-height: 1.2em; margin: 9px 0 0; color: #444; font-size: 12px; }
+    @media (max-width: 580px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-card { padding: 18px; }
+      .sig-wrapper { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Away Digital Teams — Email Signature Generator</h1>
+    <p class="subtitle">Fill in the fields below. The signature updates live.</p>
+
+    <section class="form-card" aria-label="Signature details">
+      <div class="form-grid">
+        <div class="field">
+          <label for="inp-name">Full Name</label>
+          <input id="inp-name" type="text" value="Thu Ho" placeholder="e.g. Paul Fellows" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="inp-title">Job Title</label>
+          <input id="inp-title" type="text" value="Senior HR Executive" placeholder="e.g. Operations Manager">
+        </div>
+        <div class="field">
+          <label for="inp-email">Email</label>
+          <input id="inp-email" type="email" value="thu.ho@awaydigitalteams.com" placeholder="e.g. name@awaydigital.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="inp-phone">Phone</label>
+          <input id="inp-phone" type="tel" value="+84 28377 12184" placeholder="e.g. +613 9534 5025" autocomplete="tel">
+        </div>
+        <div class="field">
+          <div class="mobile-toggle">
+            <input id="chk-mobile" type="checkbox" checked>
+            <label for="chk-mobile">Show Mobile</label>
+          </div>
+          <input id="inp-mobile" type="tel" value="+84 988 862 342" placeholder="e.g. +61 498 653 772" autocomplete="tel">
+        </div>
+      </div>
+    </section>
+
+    <div class="preview-label">Live Preview</div>
+    <div class="sig-wrapper" aria-label="Email signature preview">
+      <div id="sig-output"></div>
+    </div>
+    <button class="btn-copy" id="copy-button" type="button">Copy Signature HTML</button>
+    <p class="status" id="copy-status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    const fields = ['inp-name', 'inp-title', 'inp-email', 'inp-phone', 'inp-mobile', 'chk-mobile'];
+    const defaults = {
+      name: 'Thu Ho',
+      title: 'Senior HR Executive',
+      email: 'thu.ho@awaydigitalteams.com',
+      phone: '+84 28377 12184',
+      mobile: '+84 988 862 342'
+    };
+
+    // Escape user-entered values before inserting them into generated HTML.
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function getSignatureHTML() {
+      const name = escapeHTML(document.getElementById('inp-name').value || defaults.name);
+      const title = escapeHTML(document.getElementById('inp-title').value || defaults.title);
+      const email = escapeHTML(document.getElementById('inp-email').value || defaults.email);
+      const phone = escapeHTML(document.getElementById('inp-phone').value || defaults.phone);
+      const mobile = escapeHTML(document.getElementById('inp-mobile').value || defaults.mobile);
+      const showMobile = document.getElementById('chk-mobile').checked;
+      const mobileRow = showMobile
+        ? `<div><span style="color:#000;font-weight:500;">Mobile</span>&nbsp;&nbsp;&nbsp;&nbsp;${mobile}</div>`
+        : '';
+
+      return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Aptos,Arial,sans-serif;color:#000;">
+  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;line-height:1.4;padding-bottom:20px;">
+    <span style="font-weight:700;color:#000;">${name}</span>
+    <span style="color:#ccc;padding:0 5px;font-weight:500;">|</span>
+    <span style="color:#000;font-weight:500;">${title}</span>
+  </td></tr>
+  <tr><td style="padding-bottom:20px;">
+    <a href="https://awaydigitalteams.com/" target="_blank" style="display:inline-block;text-decoration:none;">
+      <img src="https://raw.githubusercontent.com/haotacodex/away-digital-teams/main/Assets/Away-Digital-Teams.gif" alt="Away Digital Teams" width="550" style="display:block;max-width:100%;height:auto;border:0;">
+    </a>
+  </td></tr>
+  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;line-height:1.2;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr style="vertical-align:top;">
+      <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;padding-right:10px;vertical-align:top;font-weight:500;white-space:nowrap;">
+        <div style="margin-bottom:5px;"><a href="https://awaydigitalteams.com" target="_blank" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">awaydigitalteams.com</a></div>
+        <div><a href="mailto:${email}" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">${email}</a></div>
+      </td>
+      <td style="width:1px;background-color:#ccc;font-size:0;line-height:0;padding:0;">&nbsp;</td>
+      <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;font-weight:500;white-space:nowrap;vertical-align:top;padding-left:10px;">
+        <div style="margin-bottom:5px;"><span style="font-weight:500;">Phone</span>&nbsp;&nbsp;&nbsp;&nbsp;${phone}</div>${mobileRow}
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td height="20" style="font-size:0;line-height:0;padding:0;">&nbsp;</td></tr>
+  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;line-height:1.4;">
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr valign="top"><td style="font-size:11pt;font-weight:500;padding-right:20px;white-space:nowrap;">Australia</td><td style="font-size:11pt;color:#ccc;padding-right:10px;">|</td><td style="font-size:11pt;font-weight:500;">Suite 4 &amp; 5, 15 Inkerman St, St Kilda VIC 3182</td></tr>
+      <tr valign="top"><td style="font-size:11pt;font-weight:500;padding-right:20px;white-space:nowrap;">USA</td><td style="font-size:11pt;color:#ccc;padding-right:10px;">|</td><td style="font-size:11pt;font-weight:500;">7055 Old Katy Rd, Suite #541, Houston, TX 77024</td></tr>
+      <tr valign="top"><td style="font-size:11pt;font-weight:500;padding-right:20px;white-space:nowrap;">Vietnam</td><td style="font-size:11pt;color:#ccc;padding-right:10px;">|</td><td style="font-size:11pt;font-weight:500;">IPC Tower, Level 12, 1489 Nguyen Van Linh, Tan Hung, HCMC</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:9pt;color:#000;line-height:1.4;padding-top:20px;">
+    <table cellpadding="0" cellspacing="0" border="0" style="max-width:550px;"><tr><td style="font-size:9pt;color:#000;font-weight:500;"><b>DISCLAIMER:</b> This e-mail and any files transmitted with it are confidential and intended solely for the use of the individual or entity to whom they are addressed. If you have received this e-mail in error, please notify the sender and delete it from your system.</td></tr></table>
+  </td></tr>
+</table>`;
+    }
+
+    function updateSignature() {
+      document.getElementById('sig-output').innerHTML = getSignatureHTML();
+    }
+
+    async function copySignature() {
+      const html = getSignatureHTML();
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          const item = new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([document.getElementById('sig-output').innerText], { type: 'text/plain' })
+          });
+          await navigator.clipboard.write([item]);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = html;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const copied = document.execCommand('copy');
+          textarea.remove();
+          if (!copied) throw new Error('Copy was not available');
+        }
+        const button = document.getElementById('copy-button');
+        button.textContent = '✓ Copied!';
+        button.classList.add('copied');
+        document.getElementById('copy-status').textContent = 'Signature HTML copied to your clipboard.';
+        window.setTimeout(() => {
+          button.textContent = 'Copy Signature HTML';
+          button.classList.remove('copied');
+        }, 2000);
+      } catch (error) {
+        document.getElementById('copy-status').textContent = 'Unable to copy automatically. Please use a secure (HTTPS) page or select and copy the preview.';
+      }
+    }
+
+    fields.forEach(id => document.getElementById(id).addEventListener('input', updateSignature));
+    document.getElementById('copy-button').addEventListener('click', copySignature);
+    updateSignature();
+  </script>
+</body>
+</html>
