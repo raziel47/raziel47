@@ -17,16 +17,23 @@
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label, .mobile-toggle label, .preview-label { color: #555; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
     .field input { width: 100%; padding: 9px 11px; border: 1px solid #ccc; border-radius: 4px; color: #111; font: 13px Arial, sans-serif; }
-    .field input:focus { outline: 2px solid #555; outline-offset: 1px; }
+    .field input:focus, button:focus-visible { outline: 2px solid #555; outline-offset: 2px; }
     .mobile-toggle { display: flex; align-items: center; gap: 8px; min-height: 18px; }
     .mobile-toggle input { width: 15px; height: 15px; margin: 0; accent-color: #111; }
     .mobile-toggle label { cursor: pointer; }
+    .upload-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #ddd; }
+    .upload-section label { display: block; margin-bottom: 8px; color: #333; font-size: 13px; font-weight: 700; }
+    .upload-help { margin: 0 0 12px; color: #555; font-size: 12px; line-height: 1.5; }
+    .upload-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .upload-row input { max-width: 100%; font: 13px Arial, sans-serif; }
     .preview-label { margin-bottom: 10px; color: #777; letter-spacing: .07em; }
     .sig-wrapper { max-width: 100%; overflow-x: auto; margin-bottom: 18px; padding: 24px; }
-    .btn-copy { padding: 11px 22px; border: 0; border-radius: 4px; background: #111; color: #fff; cursor: pointer; font: 700 13px Arial, sans-serif; }
-    .btn-copy:hover { background: #333; }
+    .btn-copy, .btn-upload { padding: 11px 22px; border: 0; border-radius: 4px; background: #111; color: #fff; cursor: pointer; font: 700 13px Arial, sans-serif; }
+    .btn-copy:hover, .btn-upload:hover { background: #333; }
     .btn-copy.copied { background: #2e7d32; }
-    .status { min-height: 1.2em; margin: 9px 0 0; color: #444; font-size: 12px; }
+    button:disabled { cursor: wait; opacity: .65; }
+    .status { min-height: 1.2em; margin: 9px 0 0; color: #444; font-size: 12px; line-height: 1.5; }
+    .status a { color: #0645ad; }
     @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } .form-card { padding: 18px; } .sig-wrapper { padding: 16px; } }
   </style>
 </head>
@@ -45,6 +52,15 @@
           <input id="inp-mobile" type="tel" value="+84 988 862 342" placeholder="e.g. +61 498 653 772" autocomplete="tel">
         </div>
       </div>
+      <div class="upload-section">
+        <label for="logo-file">Update signature logo</label>
+        <p class="upload-help">Choose a PNG image (up to 5 MB). Uploading it will commit the new logo to this repository.</p>
+        <div class="upload-row">
+          <input id="logo-file" type="file" accept="image/png,.png" aria-describedby="upload-status">
+          <button class="btn-upload" id="upload-button" type="button">Upload &amp; commit logo</button>
+        </div>
+        <p class="status" id="upload-status" role="status" aria-live="polite"></p>
+      </div>
     </section>
     <div class="preview-label">Live Preview</div>
     <div class="sig-wrapper" aria-label="Email signature preview"><div id="sig-output"></div></div>
@@ -54,7 +70,9 @@
   <script>
     const fields = ['inp-name', 'inp-title', 'inp-email', 'inp-phone', 'inp-mobile', 'chk-mobile'];
     const defaults = { name: 'Thu Ho', title: 'Senior HR Executive', email: 'thu.ho@awaydigitalteams.com', phone: '+84 28377 12184', mobile: '+84 988 862 342' };
-    const logoURL = 'https://raw.githubusercontent.com/raziel47/raziel47/main/assets/away-digital-vietnam-10.svg';
+    const fallbackLogoURL = 'https://raw.githubusercontent.com/raziel47/raziel47/main/assets/away-digital-vietnam-10.svg';
+    const uploadedLogoURL = 'https://raw.githubusercontent.com/raziel47/raziel47/main/assets/signature-logo.png';
+    let logoURL = fallbackLogoURL;
 
     function escapeHTML(value) {
       return String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -66,22 +84,17 @@
       const email = escapeHTML(document.getElementById('inp-email').value || defaults.email);
       const phone = escapeHTML(document.getElementById('inp-phone').value || defaults.phone);
       const mobile = escapeHTML(document.getElementById('inp-mobile').value || defaults.mobile);
-      const showMobile = document.getElementById('chk-mobile').checked;
-      const mobileRow = showMobile ? `<div><span style="color:#000;font-weight:500;">Mobile</span>&nbsp;&nbsp;&nbsp;&nbsp;${mobile}</div>` : '';
+      const mobileRow = document.getElementById('chk-mobile').checked
+        ? `<div><span style="color:#000;font-weight:500;">Mobile</span>&nbsp;&nbsp;&nbsp;&nbsp;${mobile}</div>` : '';
 
       return `<table cellpadding="0" cellspacing="0" border="0" style="font-family:Aptos,Arial,sans-serif;color:#000;">
   <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;line-height:1.4;padding-bottom:14px;"><span style="font-weight:700;color:#000;">${name}</span><span style="color:#ccc;padding:0 5px;font-weight:500;">|</span><span style="color:#000;font-weight:500;">${title}</span></td></tr>
   <tr><td style="padding-bottom:18px;"><a href="https://awaydigitalteams.com/" target="_blank" style="display:inline-block;text-decoration:none;"><img src="${logoURL}" alt="Away Digital — 10 Years in Vietnam" width="600" style="display:block;width:600px;max-width:100%;height:auto;border:0;"></a></td></tr>
-  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;line-height:1.2;">
-    <table cellpadding="0" cellspacing="0" border="0"><tr style="vertical-align:top;">
-      <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;padding-right:10px;vertical-align:top;font-weight:500;white-space:nowrap;">
-        <div style="margin-bottom:5px;"><a href="https://awaydigitalteams.com" target="_blank" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">awaydigitalteams.com</a></div>
-        <div><a href="mailto:${email}" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">${email}</a></div>
-      </td>
-      <td style="width:1px;background-color:#ccc;font-size:0;line-height:0;padding:0;">&nbsp;</td>
-      <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;font-weight:500;white-space:nowrap;vertical-align:top;padding-left:10px;"><div style="margin-bottom:5px;"><span style="font-weight:500;">Phone</span>&nbsp;&nbsp;&nbsp;&nbsp;${phone}</div>${mobileRow}</td>
-    </tr></table>
-  </td></tr>
+  <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;line-height:1.2;"><table cellpadding="0" cellspacing="0" border="0"><tr style="vertical-align:top;">
+    <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;padding-right:10px;vertical-align:top;font-weight:500;white-space:nowrap;"><div style="margin-bottom:5px;"><a href="https://awaydigitalteams.com" target="_blank" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">awaydigitalteams.com</a></div><div><a href="mailto:${email}" style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#00e;text-decoration:underline;font-weight:500;">${email}</a></div></td>
+    <td style="width:1px;background-color:#ccc;font-size:0;line-height:0;padding:0;">&nbsp;</td>
+    <td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;font-weight:500;white-space:nowrap;vertical-align:top;padding-left:10px;"><div style="margin-bottom:5px;"><span style="font-weight:500;">Phone</span>&nbsp;&nbsp;&nbsp;&nbsp;${phone}</div>${mobileRow}</td>
+  </tr></table></td></tr>
   <tr><td height="20" style="font-size:0;line-height:0;padding:0;">&nbsp;</td></tr>
   <tr><td style="font-family:Aptos,Arial,sans-serif;font-size:11pt;color:#000;line-height:1.4;"><table cellpadding="0" cellspacing="0" border="0">
     <tr valign="top"><td style="font-size:11pt;font-weight:500;padding-right:20px;white-space:nowrap;">Australia</td><td style="font-size:11pt;color:#ccc;padding-right:10px;">|</td><td style="font-size:11pt;font-weight:500;">Suite 4 &amp; 5, 15 Inkerman St, St Kilda VIC 3182</td></tr>
@@ -94,14 +107,56 @@
 
     function updateSignature() { document.getElementById('sig-output').innerHTML = getSignatureHTML(); }
 
+    async function loadSavedLogo() {
+      try {
+        const response = await fetch('/api/upload-logo', { cache: 'no-store' });
+        if (response.ok && (await response.json()).exists) logoURL = uploadedLogoURL + '?v=' + Date.now();
+      } catch (_) {
+        // Static preview still works with the bundled SVG when the API isn't deployed.
+      }
+      updateSignature();
+    }
+
+    async function uploadLogo() {
+      const input = document.getElementById('logo-file');
+      const button = document.getElementById('upload-button');
+      const status = document.getElementById('upload-status');
+      const file = input.files[0];
+      status.textContent = '';
+      if (!file) { status.textContent = 'Choose a PNG image first.'; return; }
+      if (file.type !== 'image/png' || !file.name.toLowerCase().endsWith('.png')) { status.textContent = 'Please select a PNG image.'; return; }
+      if (file.size > 5 * 1024 * 1024) { status.textContent = 'The image must be 5 MB or smaller.'; return; }
+      button.disabled = true;
+      button.textContent = 'Uploading…';
+      try {
+        const formData = new FormData();
+        formData.append('logo', file);
+        const response = await fetch('/api/upload-logo', { method: 'POST', body: formData });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Upload failed.');
+        logoURL = uploadedLogoURL + '?v=' + Date.now();
+        updateSignature();
+        status.textContent = 'Logo uploaded and committed successfully. Commit: ';
+        const link = document.createElement('a');
+        link.href = result.commitUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = result.commitSha.slice(0, 7);
+        status.appendChild(link);
+        input.value = '';
+      } catch (error) {
+        status.textContent = error.message || 'Upload failed. Check that the backend is deployed and configured.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Upload & commit logo';
+      }
+    }
+
     async function copySignature() {
       const html = getSignatureHTML();
       try {
         if (navigator.clipboard && window.ClipboardItem) {
-          const item = new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([document.getElementById('sig-output').innerText], { type: 'text/plain' })
-          });
+          const item = new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([document.getElementById('sig-output').innerText], { type: 'text/plain' }) });
           await navigator.clipboard.write([item]);
         } else {
           const textarea = document.createElement('textarea');
@@ -119,14 +174,16 @@
         button.classList.add('copied');
         document.getElementById('copy-status').textContent = 'Signature HTML copied to your clipboard.';
         window.setTimeout(() => { button.textContent = 'Copy Signature HTML'; button.classList.remove('copied'); }, 2000);
-      } catch (error) {
+      } catch (_) {
         document.getElementById('copy-status').textContent = 'Unable to copy automatically. Please use a secure (HTTPS) page or select and copy the preview.';
       }
     }
 
     fields.forEach(id => document.getElementById(id).addEventListener('input', updateSignature));
+    document.getElementById('upload-button').addEventListener('click', uploadLogo);
     document.getElementById('copy-button').addEventListener('click', copySignature);
     updateSignature();
+    loadSavedLogo();
   </script>
 </body>
 </html>

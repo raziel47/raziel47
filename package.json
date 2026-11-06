@@ -1,0 +1,9 @@
+{
+  "name": "away-digital-signature-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Secure serverless upload endpoint for the email signature logo.",
+  "dependencies": {
+    "busboy": "^1.6.0"
+  }
+}
